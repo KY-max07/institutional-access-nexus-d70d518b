@@ -24,7 +24,11 @@ const LoginForm = () => {
 
     const { error } = await login(email, password);
     if (error) {
-      setError(error.message || 'Login failed. Please try again.');
+      if (error.message.includes('Invalid login credentials')) {
+        setError('Invalid email or password. Please check your credentials or sign up for a new account.');
+      } else {
+        setError(error.message || 'Login failed. Please try again.');
+      }
     }
     setLoading(false);
   };
@@ -47,6 +51,29 @@ const LoginForm = () => {
   const quickLogin = (demoEmail: string) => {
     setEmail(demoEmail);
     setPassword('password');
+  };
+
+  const createDemoAccount = async (demoEmail: string, roleName: string) => {
+    setLoading(true);
+    setError('');
+    setMessage('');
+
+    // Try to create the demo account
+    const { error } = await signUp(demoEmail, 'password', roleName);
+    if (error) {
+      if (error.message.includes('User already registered')) {
+        // If user already exists, try to login
+        const { error: loginError } = await login(demoEmail, 'password');
+        if (loginError) {
+          setError(`Demo account exists but login failed: ${loginError.message}`);
+        }
+      } else {
+        setError(`Failed to create demo account: ${error.message}`);
+      }
+    } else {
+      setMessage(`Demo account created! Check email for verification or it may auto-login.`);
+    }
+    setLoading(false);
   };
 
   const demoAccounts = [
@@ -106,6 +133,11 @@ const LoginForm = () => {
                   {error && (
                     <Alert variant="destructive">
                       <AlertDescription>{error}</AlertDescription>
+                    </Alert>
+                  )}
+                  {message && (
+                    <Alert>
+                      <AlertDescription>{message}</AlertDescription>
                     </Alert>
                   )}
                   <Button type="submit" className="w-full" disabled={loading}>
@@ -184,13 +216,24 @@ const LoginForm = () => {
                   <CardContent className="p-6">
                     <div className="flex items-center justify-between mb-3">
                       <h3 className="font-semibold text-lg">{account.role}</h3>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => quickLogin(account.email)}
-                      >
-                        Quick Login
-                      </Button>
+                      <div className="flex gap-2">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => quickLogin(account.email)}
+                          disabled={loading}
+                        >
+                          Quick Login
+                        </Button>
+                        <Button
+                          variant="default"
+                          size="sm"
+                          onClick={() => createDemoAccount(account.email, account.role)}
+                          disabled={loading}
+                        >
+                          Create & Login
+                        </Button>
+                      </div>
                     </div>
                     <p className="text-gray-600 mb-2">{account.desc}</p>
                     <p className="text-sm text-gray-500">{account.email}</p>
@@ -199,6 +242,16 @@ const LoginForm = () => {
                 </Card>
               ))}
             </div>
+            {error && (
+              <Alert variant="destructive" className="mt-4 max-w-4xl mx-auto">
+                <AlertDescription>{error}</AlertDescription>
+              </Alert>
+            )}
+            {message && (
+              <Alert className="mt-4 max-w-4xl mx-auto">
+                <AlertDescription>{message}</AlertDescription>
+              </Alert>
+            )}
           </TabsContent>
         </Tabs>
       </div>
