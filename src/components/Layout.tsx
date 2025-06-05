@@ -35,6 +35,10 @@ const Layout: React.FC<LayoutProps> = ({ children, title }) => {
     }
   };
 
+  const handleLogout = async () => {
+    await logout();
+  };
+
   return (
     <div className="min-h-screen bg-gray-50">
       <header className="bg-white border-b border-gray-200 px-6 py-4">
@@ -72,7 +76,7 @@ const Layout: React.FC<LayoutProps> = ({ children, title }) => {
                   <Settings className="mr-2 h-4 w-4" />
                   Settings
                 </DropdownMenuItem>
-                <DropdownMenuItem onClick={logout} className="text-red-600">
+                <DropdownMenuItem onClick={handleLogout} className="text-red-600">
                   <LogOut className="mr-2 h-4 w-4" />
                   Logout
                 </DropdownMenuItem>

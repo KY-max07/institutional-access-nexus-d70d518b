@@ -11,20 +11,42 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 const LoginForm = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [name, setName] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
-  const { login } = useAuth();
+  const [message, setMessage] = useState('');
+  const { login, signUp } = useAuth();
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
     setError('');
 
-    const success = await login(email, password);
-    if (!success) {
-      setError('Invalid credentials. Please try again.');
+    const { error } = await login(email, password);
+    if (error) {
+      setError(error.message || 'Login failed. Please try again.');
     }
     setLoading(false);
+  };
+
+  const handleSignUp = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoading(true);
+    setError('');
+    setMessage('');
+
+    const { error } = await signUp(email, password, name);
+    if (error) {
+      setError(error.message || 'Sign up failed. Please try again.');
+    } else {
+      setMessage('Check your email for a confirmation link!');
+    }
+    setLoading(false);
+  };
+
+  const quickLogin = (demoEmail: string) => {
+    setEmail(demoEmail);
+    setPassword('password');
   };
 
   const demoAccounts = [
@@ -33,11 +55,6 @@ const LoginForm = () => {
     { email: 'admin@school.com', role: 'Institution Admin', desc: 'User management' },
     { email: 'teacher@school.com', role: 'Teacher', desc: 'Class management' }
   ];
-
-  const quickLogin = (demoEmail: string) => {
-    setEmail(demoEmail);
-    setPassword('password');
-  };
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center p-4">
@@ -48,8 +65,9 @@ const LoginForm = () => {
         </div>
 
         <Tabs defaultValue="login" className="w-full">
-          <TabsList className="grid w-full grid-cols-2 mb-6">
+          <TabsList className="grid w-full grid-cols-3 mb-6">
             <TabsTrigger value="login">Login</TabsTrigger>
+            <TabsTrigger value="signup">Sign Up</TabsTrigger>
             <TabsTrigger value="demo">Demo Accounts</TabsTrigger>
           </TabsList>
 
@@ -62,7 +80,7 @@ const LoginForm = () => {
                 </CardDescription>
               </CardHeader>
               <CardContent>
-                <form onSubmit={handleSubmit} className="space-y-4">
+                <form onSubmit={handleLogin} className="space-y-4">
                   <div className="space-y-2">
                     <Label htmlFor="email">Email</Label>
                     <Input
@@ -92,6 +110,67 @@ const LoginForm = () => {
                   )}
                   <Button type="submit" className="w-full" disabled={loading}>
                     {loading ? 'Signing in...' : 'Sign In'}
+                  </Button>
+                </form>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="signup">
+            <Card className="mx-auto max-w-md">
+              <CardHeader>
+                <CardTitle>Create Account</CardTitle>
+                <CardDescription>
+                  Sign up for a new account
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <form onSubmit={handleSignUp} className="space-y-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="signup-name">Full Name</Label>
+                    <Input
+                      id="signup-name"
+                      type="text"
+                      value={name}
+                      onChange={(e) => setName(e.target.value)}
+                      placeholder="Enter your full name"
+                      required
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="signup-email">Email</Label>
+                    <Input
+                      id="signup-email"
+                      type="email"
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
+                      placeholder="Enter your email"
+                      required
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="signup-password">Password</Label>
+                    <Input
+                      id="signup-password"
+                      type="password"
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
+                      placeholder="Create a password"
+                      required
+                    />
+                  </div>
+                  {error && (
+                    <Alert variant="destructive">
+                      <AlertDescription>{error}</AlertDescription>
+                    </Alert>
+                  )}
+                  {message && (
+                    <Alert>
+                      <AlertDescription>{message}</AlertDescription>
+                    </Alert>
+                  )}
+                  <Button type="submit" className="w-full" disabled={loading}>
+                    {loading ? 'Creating account...' : 'Sign Up'}
                   </Button>
                 </form>
               </CardContent>

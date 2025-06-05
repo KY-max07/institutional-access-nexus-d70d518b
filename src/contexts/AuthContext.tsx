@@ -1,9 +1,12 @@
 
 import React, { createContext, useContext, useState, useEffect } from 'react';
+import { supabase } from '@/integrations/supabase/client';
+import { User, Session } from '@supabase/supabase-js';
+import type { Database } from '@/integrations/supabase/types';
 
-export type UserRole = 'super_admin' | 'management' | 'institution_admin' | 'teacher' | 'custom';
+export type UserRole = Database['public']['Enums']['user_role'];
 
-export interface User {
+export interface AuthUser {
   id: string;
   name: string;
   email: string;
@@ -15,88 +18,142 @@ export interface User {
 }
 
 interface AuthContextType {
-  user: User | null;
-  login: (email: string, password: string) => Promise<boolean>;
-  logout: () => void;
+  user: AuthUser | null;
+  session: Session | null;
+  loading: boolean;
+  login: (email: string, password: string) => Promise<{ error: any }>;
+  signUp: (email: string, password: string, name: string) => Promise<{ error: any }>;
+  logout: () => Promise<void>;
   switchRole: (role: UserRole) => void;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-// Mock users for demonstration
-const mockUsers: Record<string, User> = {
-  'super@admin.com': {
-    id: '1',
-    name: 'Sarah Wilson',
-    email: 'super@admin.com',
-    role: 'super_admin',
-    avatar: 'https://images.unsplash.com/photo-1494790108755-2616b95b72d7?w=150'
-  },
-  'management@school.com': {
-    id: '2',
-    name: 'David Chen',
-    email: 'management@school.com',
-    role: 'management',
-    institutionId: 'inst_1',
-    institutionName: 'Riverside High School',
-    avatar: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=150'
-  },
-  'admin@school.com': {
-    id: '3',
-    name: 'Maria Rodriguez',
-    email: 'admin@school.com',
-    role: 'institution_admin',
-    institutionId: 'inst_1',
-    institutionName: 'Riverside High School',
-    avatar: 'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=150'
-  },
-  'teacher@school.com': {
-    id: '4',
-    name: 'James Thompson',
-    email: 'teacher@school.com',
-    role: 'teacher',
-    institutionId: 'inst_1',
-    institutionName: 'Riverside High School',
-    avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150'
-  }
-};
-
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [user, setUser] = useState<User | null>(null);
+  const [user, setUser] = useState<AuthUser | null>(null);
+  const [session, setSession] = useState<Session | null>(null);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const savedUser = localStorage.getItem('user');
-    if (savedUser) {
-      setUser(JSON.parse(savedUser));
-    }
+    // Set up auth state listener
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      async (event, session) => {
+        setSession(session);
+        if (session?.user) {
+          // Fetch user profile data
+          setTimeout(async () => {
+            await fetchUserProfile(session.user.id);
+          }, 0);
+        } else {
+          setUser(null);
+        }
+        setLoading(false);
+      }
+    );
+
+    // Check for existing session
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setSession(session);
+      if (session?.user) {
+        fetchUserProfile(session.user.id);
+      } else {
+        setLoading(false);
+      }
+    });
+
+    return () => subscription.unsubscribe();
   }, []);
 
-  const login = async (email: string, password: string): Promise<boolean> => {
-    // Simple mock authentication
-    const foundUser = mockUsers[email];
-    if (foundUser && password === 'password') {
-      setUser(foundUser);
-      localStorage.setItem('user', JSON.stringify(foundUser));
-      return true;
+  const fetchUserProfile = async (userId: string) => {
+    try {
+      const { data: profile, error } = await supabase
+        .from('profiles')
+        .select(`
+          *,
+          institutions(name)
+        `)
+        .eq('id', userId)
+        .single();
+
+      if (error) {
+        console.error('Error fetching profile:', error);
+        return;
+      }
+
+      if (profile) {
+        setUser({
+          id: profile.id,
+          name: profile.name,
+          email: profile.email,
+          role: profile.role,
+          institutionId: profile.institution_id || undefined,
+          institutionName: profile.institutions?.name || undefined,
+          permissions: profile.permissions || [],
+          avatar: profile.avatar || undefined,
+        });
+      }
+    } catch (error) {
+      console.error('Error in fetchUserProfile:', error);
     }
-    return false;
   };
 
-  const logout = () => {
+  const login = async (email: string, password: string) => {
+    const { error } = await supabase.auth.signInWithPassword({
+      email,
+      password,
+    });
+    return { error };
+  };
+
+  const signUp = async (email: string, password: string, name: string) => {
+    const redirectUrl = `${window.location.origin}/`;
+    
+    const { error } = await supabase.auth.signUp({
+      email,
+      password,
+      options: {
+        emailRedirectTo: redirectUrl,
+        data: {
+          name: name,
+        }
+      }
+    });
+    return { error };
+  };
+
+  const logout = async () => {
+    await supabase.auth.signOut();
     setUser(null);
-    localStorage.removeItem('user');
+    setSession(null);
   };
 
-  const switchRole = (role: UserRole) => {
-    if (user) {
-      const updatedUser = { ...user, role };
-      setUser(updatedUser);
-      localStorage.setItem('user', JSON.stringify(updatedUser));
+  const switchRole = async (role: UserRole) => {
+    if (user && session) {
+      try {
+        const { error } = await supabase
+          .from('profiles')
+          .update({ role })
+          .eq('id', user.id);
+
+        if (!error) {
+          setUser({ ...user, role });
+        }
+      } catch (error) {
+        console.error('Error switching role:', error);
+      }
     }
   };
 
   return (
-    <AuthContext.Provider value={{ user, login, logout, switchRole }}>
+    <AuthContext.Provider value={{ 
+      user, 
+      session, 
+      loading, 
+      login, 
+      signUp, 
+      logout, 
+      switchRole 
+    }}>
       {children}
     </AuthContext.Provider>
   );
