@@ -52,12 +52,15 @@ const AssignmentManagement = () => {
     queryKey: ['current_teacher'],
     queryFn: async () => {
       const { data, error } = await supabase
-        .from('teachers' as any)
+        .from('teachers')
         .select('id')
         .eq('user_id', user?.id)
         .single();
       
-      if (error) throw error;
+      if (error) {
+        console.error('Error fetching teacher data:', error);
+        return null;
+      }
       return data;
     },
     enabled: !!user?.id
@@ -69,13 +72,16 @@ const AssignmentManagement = () => {
       if (!teacherData?.id) return [];
       
       const { data, error } = await supabase
-        .from('classes' as any)
+        .from('classes')
         .select('id, name')
         .eq('teacher_id', teacherData.id)
         .order('name');
       
-      if (error) throw error;
-      return data as Class[];
+      if (error) {
+        console.error('Error fetching classes:', error);
+        return [];
+      }
+      return data || [];
     },
     enabled: !!teacherData?.id
   });
@@ -86,15 +92,16 @@ const AssignmentManagement = () => {
       if (!teacherData?.id) return [];
       
       const { data, error } = await supabase
-        .from('assignments' as any)
-        .select(`
-          *
-        `)
+        .from('assignments')
+        .select('*')
         .eq('teacher_id', teacherData.id)
         .order('created_at', { ascending: false });
       
-      if (error) throw error;
-      return data as Assignment[];
+      if (error) {
+        console.error('Error fetching assignments:', error);
+        return [];
+      }
+      return data || [];
     },
     enabled: !!teacherData?.id
   });
@@ -102,7 +109,7 @@ const AssignmentManagement = () => {
   const createMutation = useMutation({
     mutationFn: async (newAssignment: typeof formData) => {
       const { data, error } = await supabase
-        .from('assignments' as any)
+        .from('assignments')
         .insert([{
           ...newAssignment,
           teacher_id: teacherData?.id,
@@ -135,7 +142,7 @@ const AssignmentManagement = () => {
   const updateMutation = useMutation({
     mutationFn: async ({ id, updates }: { id: string; updates: typeof formData }) => {
       const { data, error } = await supabase
-        .from('assignments' as any)
+        .from('assignments')
         .update({
           ...updates,
           due_date: updates.due_date || null
@@ -168,7 +175,7 @@ const AssignmentManagement = () => {
   const deleteMutation = useMutation({
     mutationFn: async (id: string) => {
       const { error } = await supabase
-        .from('assignments' as any)
+        .from('assignments')
         .delete()
         .eq('id', id);
       

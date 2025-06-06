@@ -34,14 +34,14 @@ const CreateClass = () => {
     queryFn: async () => {
       try {
         const { data, error } = await supabase
-          .from('teachers' as any)
+          .from('teachers')
           .select('id, name, email')
           .eq('institution_id', user?.institutionId)
           .eq('status', 'active')
           .order('name');
         
         if (error) throw error;
-        return data as Teacher[];
+        return data || [];
       } catch (error) {
         console.error('Error fetching teachers:', error);
         return [];
@@ -53,7 +53,7 @@ const CreateClass = () => {
   const createClassMutation = useMutation({
     mutationFn: async (classData: typeof formData) => {
       const { data, error } = await supabase
-        .from('classes' as any)
+        .from('classes')
         .insert([{
           ...classData,
           institution_id: user?.institutionId

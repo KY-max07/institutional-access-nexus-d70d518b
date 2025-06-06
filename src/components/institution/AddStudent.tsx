@@ -29,7 +29,7 @@ const AddStudent = () => {
   const createStudentMutation = useMutation({
     mutationFn: async (studentData: typeof formData) => {
       const { data, error } = await supabase
-        .from('students' as any)
+        .from('students')
         .insert([{
           ...studentData,
           institution_id: user?.institutionId

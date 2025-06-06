@@ -13,9 +13,9 @@ const QuickActions = () => {
       // Get counts for institutions, teachers, students, and assignments
       const [institutionsResult, teachersResult, studentsResult, assignmentsResult] = await Promise.all([
         supabase.from('institutions').select('id', { count: 'exact', head: true }),
-        supabase.from('teachers' as any).select('id', { count: 'exact', head: true }),
-        supabase.from('students' as any).select('id', { count: 'exact', head: true }),
-        supabase.from('assignments' as any).select('id', { count: 'exact', head: true })
+        supabase.from('teachers').select('id', { count: 'exact', head: true }),
+        supabase.from('students').select('id', { count: 'exact', head: true }),
+        supabase.from('assignments').select('id', { count: 'exact', head: true })
       ]);
 
       return {

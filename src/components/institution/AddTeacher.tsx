@@ -15,18 +15,16 @@ const AddTeacher = () => {
   const [formData, setFormData] = useState({
     name: '',
     email: '',
-    subjects: [] as string[]
+    subject: ''
   });
-  const [newSubject, setNewSubject] = useState('');
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const { user } = useAuth();
 
   const createTeacherMutation = useMutation({
     mutationFn: async (teacherData: typeof formData) => {
-      // Use direct insert with type assertion to work around TypeScript issues
       const { data, error } = await supabase
-        .from('teachers' as any)
+        .from('teachers')
         .insert([{
           ...teacherData,
           institution_id: user?.institutionId
@@ -55,37 +53,12 @@ const AddTeacher = () => {
   });
 
   const resetForm = () => {
-    setFormData({ name: '', email: '', subjects: [] });
-    setNewSubject('');
+    setFormData({ name: '', email: '', subject: '' });
   };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     createTeacherMutation.mutate(formData);
-  };
-
-  const addSubject = () => {
-    if (newSubject.trim() && !formData.subjects.includes(newSubject.trim())) {
-      setFormData(prev => ({
-        ...prev,
-        subjects: [...prev.subjects, newSubject.trim()]
-      }));
-      setNewSubject('');
-    }
-  };
-
-  const removeSubject = (subject: string) => {
-    setFormData(prev => ({
-      ...prev,
-      subjects: prev.subjects.filter(s => s !== subject)
-    }));
-  };
-
-  const handleKeyPress = (e: React.KeyboardEvent) => {
-    if (e.key === 'Enter') {
-      e.preventDefault();
-      addSubject();
-    }
   };
 
   return (
@@ -120,32 +93,13 @@ const AddTeacher = () => {
           </div>
 
           <div>
-            <Label htmlFor="subjects">Subjects</Label>
-            <div className="flex gap-2 mb-2">
-              <Input
-                id="subjects"
-                value={newSubject}
-                onChange={(e) => setNewSubject(e.target.value)}
-                onKeyPress={handleKeyPress}
-                placeholder="Add a subject"
-              />
-              <Button type="button" onClick={addSubject} variant="outline">
-                Add
-              </Button>
-            </div>
-            {formData.subjects.length > 0 && (
-              <div className="flex flex-wrap gap-2">
-                {formData.subjects.map((subject, index) => (
-                  <Badge key={index} variant="secondary" className="flex items-center gap-1">
-                    {subject}
-                    <X
-                      className="h-3 w-3 cursor-pointer"
-                      onClick={() => removeSubject(subject)}
-                    />
-                  </Badge>
-                ))}
-              </div>
-            )}
+            <Label htmlFor="subject">Subject</Label>
+            <Input
+              id="subject"
+              value={formData.subject}
+              onChange={(e) => setFormData({ ...formData, subject: e.target.value })}
+              placeholder="e.g., Mathematics, Science, English"
+            />
           </div>
 
           <Button type="submit" disabled={createTeacherMutation.isPending} className="w-full">
