@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import Layout from '../Layout';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -8,9 +7,12 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Users, GraduationCap, UserPlus, BookOpen, Plus, Search, Edit, Trash2 } from 'lucide-react';
+import { toast } from '@/components/ui/sonner';
 
 const InstitutionAdminDashboard = () => {
   const [searchTerm, setSearchTerm] = useState('');
+  const [selectedSubject, setSelectedSubject] = useState('all');
+  const [selectedGrade, setSelectedGrade] = useState('all');
 
   const stats = [
     { title: 'Total Teachers', value: '24', icon: GraduationCap, color: 'text-blue-600' },
@@ -46,6 +48,52 @@ const InstitutionAdminDashboard = () => {
     { action: 'Attendance report generated for Grade 10', time: '5 hours ago', type: 'report' },
     { action: 'Class schedule updated: English Literature', time: '1 day ago', type: 'schedule' }
   ];
+
+  const handleAddTeacher = () => {
+    toast.info("Add Teacher feature coming soon!");
+  };
+
+  const handleAddStudent = () => {
+    toast.info("Add Student feature coming soon!");
+  };
+
+  const handleCreateClass = () => {
+    toast.info("Create Class feature coming soon!");
+  };
+
+  const handleEdit = (type: string, id: number) => {
+    toast.info(`Edit ${type} ID: ${id} - Feature coming soon!`);
+  };
+
+  const handleDelete = (type: string, id: number) => {
+    toast.info(`Delete ${type} ID: ${id} - Feature coming soon!`);
+  };
+
+  const handleBulkImport = () => {
+    toast.info("Bulk Import feature coming soon!");
+  };
+
+  const handleGenerateReports = () => {
+    toast.info("Generate Reports feature coming soon!");
+  };
+
+  const handleAttendanceOverview = () => {
+    toast.info("Attendance Overview feature coming soon!");
+  };
+
+  const filteredTeachers = teachers.filter(teacher => {
+    const matchesSearch = teacher.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         teacher.email.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesSubject = selectedSubject === 'all' || teacher.subjects.includes(selectedSubject);
+    return matchesSearch && matchesSubject;
+  });
+
+  const filteredStudents = students.filter(student => {
+    const matchesSearch = student.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         student.email.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesGrade = selectedGrade === 'all' || student.grade === selectedGrade;
+    return matchesSearch && matchesGrade;
+  });
 
   return (
     <Layout title="Institution Admin Dashboard">
@@ -86,7 +134,7 @@ const InstitutionAdminDashboard = () => {
                         <CardTitle>Teacher Management</CardTitle>
                         <CardDescription>Manage teachers and their assignments</CardDescription>
                       </div>
-                      <Button>
+                      <Button onClick={handleAddTeacher}>
                         <Plus className="mr-2 h-4 w-4" />
                         Add Teacher
                       </Button>
@@ -103,20 +151,20 @@ const InstitutionAdminDashboard = () => {
                           className="pl-8"
                         />
                       </div>
-                      <Select>
+                      <Select value={selectedSubject} onValueChange={setSelectedSubject}>
                         <SelectTrigger className="w-48">
                           <SelectValue placeholder="Filter by subject" />
                         </SelectTrigger>
                         <SelectContent>
                           <SelectItem value="all">All Subjects</SelectItem>
-                          <SelectItem value="math">Mathematics</SelectItem>
-                          <SelectItem value="english">English</SelectItem>
-                          <SelectItem value="science">Science</SelectItem>
+                          <SelectItem value="Math">Mathematics</SelectItem>
+                          <SelectItem value="English">English</SelectItem>
+                          <SelectItem value="Science">Science</SelectItem>
                         </SelectContent>
                       </Select>
                     </div>
                     <div className="space-y-3">
-                      {teachers.map((teacher) => (
+                      {filteredTeachers.map((teacher) => (
                         <div key={teacher.id} className="flex items-center justify-between p-4 border rounded-lg">
                           <div>
                             <h3 className="font-semibold">{teacher.name}</h3>
@@ -132,10 +180,10 @@ const InstitutionAdminDashboard = () => {
                             <Badge variant={teacher.status === 'Active' ? 'default' : 'secondary'}>
                               {teacher.status}
                             </Badge>
-                            <Button variant="ghost" size="sm">
+                            <Button variant="ghost" size="sm" onClick={() => handleEdit('teacher', teacher.id)}>
                               <Edit className="h-4 w-4" />
                             </Button>
-                            <Button variant="ghost" size="sm" className="text-red-600">
+                            <Button variant="ghost" size="sm" className="text-red-600" onClick={() => handleDelete('teacher', teacher.id)}>
                               <Trash2 className="h-4 w-4" />
                             </Button>
                           </div>
@@ -154,7 +202,7 @@ const InstitutionAdminDashboard = () => {
                         <CardTitle>Student Management</CardTitle>
                         <CardDescription>Manage students and track performance</CardDescription>
                       </div>
-                      <Button>
+                      <Button onClick={handleAddStudent}>
                         <Plus className="mr-2 h-4 w-4" />
                         Add Student
                       </Button>
@@ -166,24 +214,26 @@ const InstitutionAdminDashboard = () => {
                         <Search className="absolute left-2 top-2.5 h-4 w-4 text-gray-400" />
                         <Input
                           placeholder="Search students..."
+                          value={searchTerm}
+                          onChange={(e) => setSearchTerm(e.target.value)}
                           className="pl-8"
                         />
                       </div>
-                      <Select>
+                      <Select value={selectedGrade} onValueChange={setSelectedGrade}>
                         <SelectTrigger className="w-48">
                           <SelectValue placeholder="Filter by grade" />
                         </SelectTrigger>
                         <SelectContent>
                           <SelectItem value="all">All Grades</SelectItem>
-                          <SelectItem value="9">9th Grade</SelectItem>
-                          <SelectItem value="10">10th Grade</SelectItem>
-                          <SelectItem value="11">11th Grade</SelectItem>
-                          <SelectItem value="12">12th Grade</SelectItem>
+                          <SelectItem value="9th">9th Grade</SelectItem>
+                          <SelectItem value="10th">10th Grade</SelectItem>
+                          <SelectItem value="11th">11th Grade</SelectItem>
+                          <SelectItem value="12th">12th Grade</SelectItem>
                         </SelectContent>
                       </Select>
                     </div>
                     <div className="space-y-3">
-                      {students.map((student) => (
+                      {filteredStudents.map((student) => (
                         <div key={student.id} className="flex items-center justify-between p-4 border rounded-lg">
                           <div>
                             <h3 className="font-semibold">{student.name}</h3>
@@ -192,7 +242,7 @@ const InstitutionAdminDashboard = () => {
                           </div>
                           <div className="flex items-center space-x-2">
                             <Badge variant="default">{student.status}</Badge>
-                            <Button variant="ghost" size="sm">
+                            <Button variant="ghost" size="sm" onClick={() => handleEdit('student', student.id)}>
                               <Edit className="h-4 w-4" />
                             </Button>
                           </div>
@@ -211,7 +261,7 @@ const InstitutionAdminDashboard = () => {
                         <CardTitle>Class Management</CardTitle>
                         <CardDescription>Manage classes and teacher assignments</CardDescription>
                       </div>
-                      <Button>
+                      <Button onClick={handleCreateClass}>
                         <Plus className="mr-2 h-4 w-4" />
                         Create Class
                       </Button>
@@ -227,10 +277,10 @@ const InstitutionAdminDashboard = () => {
                             <p className="text-sm text-gray-600">{classItem.students} students • {classItem.schedule}</p>
                           </div>
                           <div className="flex items-center space-x-2">
-                            <Button variant="ghost" size="sm">
+                            <Button variant="ghost" size="sm" onClick={() => handleEdit('class', classItem.id)}>
                               <Edit className="h-4 w-4" />
                             </Button>
-                            <Button variant="ghost" size="sm" className="text-red-600">
+                            <Button variant="ghost" size="sm" className="text-red-600" onClick={() => handleDelete('class', classItem.id)}>
                               <Trash2 className="h-4 w-4" />
                             </Button>
                           </div>
@@ -273,15 +323,15 @@ const InstitutionAdminDashboard = () => {
                 <CardTitle>Quick Actions</CardTitle>
               </CardHeader>
               <CardContent className="space-y-2">
-                <Button className="w-full justify-start" variant="outline">
+                <Button className="w-full justify-start" variant="outline" onClick={handleBulkImport}>
                   <UserPlus className="mr-2 h-4 w-4" />
                   Bulk Import Users
                 </Button>
-                <Button className="w-full justify-start" variant="outline">
+                <Button className="w-full justify-start" variant="outline" onClick={handleGenerateReports}>
                   <BookOpen className="mr-2 h-4 w-4" />
                   Generate Reports
                 </Button>
-                <Button className="w-full justify-start" variant="outline">
+                <Button className="w-full justify-start" variant="outline" onClick={handleAttendanceOverview}>
                   <Users className="mr-2 h-4 w-4" />
                   Attendance Overview
                 </Button>
