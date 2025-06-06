@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import Layout from '../Layout';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -8,9 +7,25 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Building2, Users, Shield, Activity, Plus, Search, Edit, Trash2 } from 'lucide-react';
+import { toast } from '@/components/ui/sonner';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
+import { supabase } from '@/integrations/supabase/client';
 
 const SuperAdminDashboard = () => {
   const [searchTerm, setSearchTerm] = useState('');
+  const [isAddInstitutionOpen, setIsAddInstitutionOpen] = useState(false);
+  const [isAddRoleOpen, setIsAddRoleOpen] = useState(false);
+  const [newInstitution, setNewInstitution] = useState({
+    name: '',
+    email: '',
+    phone: '',
+    address: ''
+  });
+  const [newRole, setNewRole] = useState({
+    name: '',
+    description: '',
+    permissions: [] as string[]
+  });
 
   const stats = [
     { title: 'Total Institutions', value: '24', icon: Building2, color: 'text-blue-600' },
@@ -37,6 +52,70 @@ const SuperAdminDashboard = () => {
     { time: '2024-01-15 09:45', user: 'System', action: 'Automated backup completed', severity: 'success' },
     { time: '2024-01-15 09:12', user: 'David Chen', action: 'Modified user permissions', severity: 'warning' }
   ];
+
+  const handleAddInstitution = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('institutions')
+        .insert([{
+          name: newInstitution.name,
+          contact_email: newInstitution.email,
+          contact_phone: newInstitution.phone,
+          address: newInstitution.address,
+          status: 'Active'
+        }]);
+
+      if (error) throw error;
+
+      toast.success('Institution added successfully!');
+      setIsAddInstitutionOpen(false);
+      setNewInstitution({ name: '', email: '', phone: '', address: '' });
+    } catch (error) {
+      toast.error('Failed to add institution');
+      console.error('Error:', error);
+    }
+  };
+
+  const handleAddCustomRole = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('custom_roles')
+        .insert([{
+          name: newRole.name,
+          description: newRole.description,
+          permissions: newRole.permissions
+        }]);
+
+      if (error) throw error;
+
+      toast.success('Custom role added successfully!');
+      setIsAddRoleOpen(false);
+      setNewRole({ name: '', description: '', permissions: [] });
+    } catch (error) {
+      toast.error('Failed to add custom role');
+      console.error('Error:', error);
+    }
+  };
+
+  const handleEditInstitution = (id: number) => {
+    toast.info(`Edit institution ${id} - Feature coming soon!`);
+  };
+
+  const handleDeleteInstitution = (id: number) => {
+    toast.info(`Delete institution ${id} - Feature coming soon!`);
+  };
+
+  const handleEditRole = (id: number) => {
+    toast.info(`Edit role ${id} - Feature coming soon!`);
+  };
+
+  const handleDeleteRole = (id: number) => {
+    toast.info(`Delete role ${id} - Feature coming soon!`);
+  };
+
+  const handleViewAllUsers = () => {
+    toast.info('Global user management feature coming soon!');
+  };
 
   return (
     <Layout title="Super Admin Dashboard">
@@ -75,7 +154,7 @@ const SuperAdminDashboard = () => {
                     <CardTitle>Institution Management</CardTitle>
                     <CardDescription>Manage all institutions in the system</CardDescription>
                   </div>
-                  <Button>
+                  <Button onClick={() => setIsAddInstitutionOpen(true)}>
                     <Plus className="mr-2 h-4 w-4" />
                     Add Institution
                   </Button>
@@ -94,27 +173,29 @@ const SuperAdminDashboard = () => {
                   </div>
                 </div>
                 <div className="space-y-3">
-                  {institutions.map((institution) => (
-                    <div key={institution.id} className="flex items-center justify-between p-4 border rounded-lg">
-                      <div>
-                        <h3 className="font-semibold">{institution.name}</h3>
-                        <p className="text-sm text-gray-600">
-                          {institution.users} users • {institution.admins} admins
-                        </p>
+                  {institutions
+                    .filter(inst => inst.name.toLowerCase().includes(searchTerm.toLowerCase()))
+                    .map((institution) => (
+                      <div key={institution.id} className="flex items-center justify-between p-4 border rounded-lg">
+                        <div>
+                          <h3 className="font-semibold">{institution.name}</h3>
+                          <p className="text-sm text-gray-600">
+                            {institution.users} users • {institution.admins} admins
+                          </p>
+                        </div>
+                        <div className="flex items-center space-x-2">
+                          <Badge variant={institution.status === 'Active' ? 'default' : 'secondary'}>
+                            {institution.status}
+                          </Badge>
+                          <Button variant="ghost" size="sm" onClick={() => handleEditInstitution(institution.id)}>
+                            <Edit className="h-4 w-4" />
+                          </Button>
+                          <Button variant="ghost" size="sm" className="text-red-600" onClick={() => handleDeleteInstitution(institution.id)}>
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </div>
                       </div>
-                      <div className="flex items-center space-x-2">
-                        <Badge variant={institution.status === 'Active' ? 'default' : 'secondary'}>
-                          {institution.status}
-                        </Badge>
-                        <Button variant="ghost" size="sm">
-                          <Edit className="h-4 w-4" />
-                        </Button>
-                        <Button variant="ghost" size="sm" className="text-red-600">
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
-                      </div>
-                    </div>
-                  ))}
+                    ))}
                 </div>
               </CardContent>
             </Card>
@@ -131,7 +212,7 @@ const SuperAdminDashboard = () => {
                   <Users className="mx-auto h-12 w-12 text-gray-400 mb-4" />
                   <h3 className="text-lg font-semibold mb-2">Global User Management</h3>
                   <p className="text-gray-600 mb-4">View and manage all users across institutions</p>
-                  <Button>View All Users</Button>
+                  <Button onClick={handleViewAllUsers}>View All Users</Button>
                 </div>
               </CardContent>
             </Card>
@@ -145,7 +226,7 @@ const SuperAdminDashboard = () => {
                     <CardTitle>Custom Roles</CardTitle>
                     <CardDescription>Create and manage custom roles for institutions</CardDescription>
                   </div>
-                  <Button>
+                  <Button onClick={() => setIsAddRoleOpen(true)}>
                     <Plus className="mr-2 h-4 w-4" />
                     Create Role
                   </Button>
@@ -158,10 +239,10 @@ const SuperAdminDashboard = () => {
                       <div className="flex items-center justify-between mb-2">
                         <h3 className="font-semibold">{role.name}</h3>
                         <div className="flex space-x-2">
-                          <Button variant="ghost" size="sm">
+                          <Button variant="ghost" size="sm" onClick={() => handleEditRole(role.id)}>
                             <Edit className="h-4 w-4" />
                           </Button>
-                          <Button variant="ghost" size="sm" className="text-red-600">
+                          <Button variant="ghost" size="sm" className="text-red-600" onClick={() => handleDeleteRole(role.id)}>
                             <Trash2 className="h-4 w-4" />
                           </Button>
                         </div>
@@ -205,6 +286,85 @@ const SuperAdminDashboard = () => {
           </TabsContent>
         </Tabs>
       </div>
+
+      {/* Add Institution Dialog */}
+      <Dialog open={isAddInstitutionOpen} onOpenChange={setIsAddInstitutionOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Add New Institution</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label htmlFor="name">Institution Name</Label>
+              <Input
+                id="name"
+                value={newInstitution.name}
+                onChange={(e) => setNewInstitution({ ...newInstitution, name: e.target.value })}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="email">Contact Email</Label>
+              <Input
+                id="email"
+                type="email"
+                value={newInstitution.email}
+                onChange={(e) => setNewInstitution({ ...newInstitution, email: e.target.value })}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="phone">Contact Phone</Label>
+              <Input
+                id="phone"
+                value={newInstitution.phone}
+                onChange={(e) => setNewInstitution({ ...newInstitution, phone: e.target.value })}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="address">Address</Label>
+              <Input
+                id="address"
+                value={newInstitution.address}
+                onChange={(e) => setNewInstitution({ ...newInstitution, address: e.target.value })}
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsAddInstitutionOpen(false)}>Cancel</Button>
+            <Button onClick={handleAddInstitution}>Add Institution</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Add Custom Role Dialog */}
+      <Dialog open={isAddRoleOpen} onOpenChange={setIsAddRoleOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Create Custom Role</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label htmlFor="roleName">Role Name</Label>
+              <Input
+                id="roleName"
+                value={newRole.name}
+                onChange={(e) => setNewRole({ ...newRole, name: e.target.value })}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="roleDescription">Description</Label>
+              <Input
+                id="roleDescription"
+                value={newRole.description}
+                onChange={(e) => setNewRole({ ...newRole, description: e.target.value })}
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsAddRoleOpen(false)}>Cancel</Button>
+            <Button onClick={handleAddCustomRole}>Create Role</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </Layout>
   );
 };
