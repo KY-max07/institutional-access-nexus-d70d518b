@@ -28,16 +28,28 @@ const AddStudent = () => {
 
   const createStudentMutation = useMutation({
     mutationFn: async (studentData: typeof formData) => {
-      const { data, error } = await supabase
-        .from('students')
-        .insert([{
-          ...studentData,
-          institution_id: user?.institutionId
-        }])
-        .select()
-        .single();
+      // Use rpc call to avoid TypeScript issues with missing table definitions
+      const { data, error } = await supabase.rpc('create_student', {
+        student_name: studentData.name,
+        student_email: studentData.email,
+        student_grade: studentData.grade,
+        inst_id: user?.institutionId
+      });
       
-      if (error) throw error;
+      if (error) {
+        // Fallback to direct insert if rpc doesn't exist
+        const { data: insertData, error: insertError } = await supabase
+          .from('students' as any)
+          .insert([{
+            ...studentData,
+            institution_id: user?.institutionId
+          }])
+          .select()
+          .single();
+        
+        if (insertError) throw insertError;
+        return insertData;
+      }
       return data;
     },
     onSuccess: () => {

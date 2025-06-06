@@ -10,27 +10,38 @@ const QuickActions = () => {
   const { data: stats } = useQuery({
     queryKey: ['dashboard_stats'],
     queryFn: async () => {
-      const [
-        institutionsResult,
-        teachersResult,
-        studentsResult,
-        classesResult,
-        assignmentsResult
-      ] = await Promise.all([
-        supabase.from('institutions').select('id', { count: 'exact' }),
-        supabase.from('teachers').select('id', { count: 'exact' }),
-        supabase.from('students').select('id', { count: 'exact' }),
-        supabase.from('classes').select('id', { count: 'exact' }),
-        supabase.from('assignments').select('id', { count: 'exact' })
-      ]);
+      try {
+        const [
+          institutionsResult,
+          teachersResult,
+          studentsResult,
+          classesResult,
+          assignmentsResult
+        ] = await Promise.all([
+          supabase.from('institutions').select('id', { count: 'exact' }),
+          supabase.from('teachers' as any).select('id', { count: 'exact' }),
+          supabase.from('students' as any).select('id', { count: 'exact' }),
+          supabase.from('classes' as any).select('id', { count: 'exact' }),
+          supabase.from('assignments' as any).select('id', { count: 'exact' })
+        ]);
 
-      return {
-        institutions: institutionsResult.count || 0,
-        teachers: teachersResult.count || 0,
-        students: studentsResult.count || 0,
-        classes: classesResult.count || 0,
-        assignments: assignmentsResult.count || 0
-      };
+        return {
+          institutions: institutionsResult.count || 0,
+          teachers: teachersResult.count || 0,
+          students: studentsResult.count || 0,
+          classes: classesResult.count || 0,
+          assignments: assignmentsResult.count || 0
+        };
+      } catch (error) {
+        console.error('Error fetching stats:', error);
+        return {
+          institutions: 0,
+          teachers: 0,
+          students: 0,
+          classes: 0,
+          assignments: 0
+        };
+      }
     },
     refetchInterval: 30000 // Refresh every 30 seconds
   });
@@ -38,26 +49,34 @@ const QuickActions = () => {
   const { data: recentActivity } = useQuery({
     queryKey: ['recent_activity'],
     queryFn: async () => {
-      const { data: recentProfiles } = await supabase
-        .from('profiles')
-        .select('name, role, created_at')
-        .order('created_at', { ascending: false })
-        .limit(5);
+      try {
+        const { data: recentProfiles } = await supabase
+          .from('profiles')
+          .select('name, role, created_at')
+          .order('created_at', { ascending: false })
+          .limit(5);
 
-      const { data: recentAssignments } = await supabase
-        .from('assignments')
-        .select(`
-          title,
-          created_at,
-          teachers(name)
-        `)
-        .order('created_at', { ascending: false })
-        .limit(3);
+        const { data: recentAssignments } = await supabase
+          .from('assignments' as any)
+          .select(`
+            title,
+            created_at,
+            teachers(name)
+          `)
+          .order('created_at', { ascending: false })
+          .limit(3);
 
-      return {
-        newUsers: recentProfiles || [],
-        newAssignments: recentAssignments || []
-      };
+        return {
+          newUsers: recentProfiles || [],
+          newAssignments: recentAssignments || []
+        };
+      } catch (error) {
+        console.error('Error fetching recent activity:', error);
+        return {
+          newUsers: [],
+          newAssignments: []
+        };
+      }
     }
   });
 

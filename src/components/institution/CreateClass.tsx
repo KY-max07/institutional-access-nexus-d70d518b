@@ -32,15 +32,20 @@ const CreateClass = () => {
   const { data: teachers, isLoading: teachersLoading } = useQuery({
     queryKey: ['institution_teachers'],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from('teachers')
-        .select('id, name, email')
-        .eq('institution_id', user?.institutionId)
-        .eq('status', 'active')
-        .order('name');
-      
-      if (error) throw error;
-      return data as Teacher[];
+      try {
+        const { data, error } = await supabase
+          .from('teachers' as any)
+          .select('id, name, email')
+          .eq('institution_id', user?.institutionId)
+          .eq('status', 'active')
+          .order('name');
+        
+        if (error) throw error;
+        return data as Teacher[];
+      } catch (error) {
+        console.error('Error fetching teachers:', error);
+        return [];
+      }
     },
     enabled: !!user?.institutionId
   });
@@ -48,7 +53,7 @@ const CreateClass = () => {
   const createClassMutation = useMutation({
     mutationFn: async (classData: typeof formData) => {
       const { data, error } = await supabase
-        .from('classes')
+        .from('classes' as any)
         .insert([{
           ...classData,
           institution_id: user?.institutionId

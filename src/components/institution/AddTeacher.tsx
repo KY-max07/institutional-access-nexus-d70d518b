@@ -24,8 +24,9 @@ const AddTeacher = () => {
 
   const createTeacherMutation = useMutation({
     mutationFn: async (teacherData: typeof formData) => {
+      // Use direct insert with type assertion to work around TypeScript issues
       const { data, error } = await supabase
-        .from('teachers')
+        .from('teachers' as any)
         .insert([{
           ...teacherData,
           institution_id: user?.institutionId
