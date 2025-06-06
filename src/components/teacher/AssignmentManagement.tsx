@@ -52,7 +52,7 @@ const AssignmentManagement = () => {
     queryKey: ['current_teacher'],
     queryFn: async () => {
       const { data, error } = await supabase
-        .from('teachers')
+        .from('teachers' as any)
         .select('id')
         .eq('user_id', user?.id)
         .single();
@@ -69,7 +69,7 @@ const AssignmentManagement = () => {
       if (!teacherData?.id) return [];
       
       const { data, error } = await supabase
-        .from('classes')
+        .from('classes' as any)
         .select('id, name')
         .eq('teacher_id', teacherData.id)
         .order('name');
@@ -86,10 +86,9 @@ const AssignmentManagement = () => {
       if (!teacherData?.id) return [];
       
       const { data, error } = await supabase
-        .from('assignments')
+        .from('assignments' as any)
         .select(`
-          *,
-          classes(name)
+          *
         `)
         .eq('teacher_id', teacherData.id)
         .order('created_at', { ascending: false });
@@ -103,7 +102,7 @@ const AssignmentManagement = () => {
   const createMutation = useMutation({
     mutationFn: async (newAssignment: typeof formData) => {
       const { data, error } = await supabase
-        .from('assignments')
+        .from('assignments' as any)
         .insert([{
           ...newAssignment,
           teacher_id: teacherData?.id,
@@ -136,7 +135,7 @@ const AssignmentManagement = () => {
   const updateMutation = useMutation({
     mutationFn: async ({ id, updates }: { id: string; updates: typeof formData }) => {
       const { data, error } = await supabase
-        .from('assignments')
+        .from('assignments' as any)
         .update({
           ...updates,
           due_date: updates.due_date || null
@@ -169,7 +168,7 @@ const AssignmentManagement = () => {
   const deleteMutation = useMutation({
     mutationFn: async (id: string) => {
       const { error } = await supabase
-        .from('assignments')
+        .from('assignments' as any)
         .delete()
         .eq('id', id);
       
@@ -359,7 +358,7 @@ const AssignmentManagement = () => {
                 </div>
               </CardTitle>
               <CardDescription>
-                {assignment.classes?.name}
+                Class ID: {assignment.class_id}
               </CardDescription>
             </CardHeader>
             <CardContent>

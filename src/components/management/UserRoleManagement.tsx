@@ -214,7 +214,7 @@ const UserRoleManagement = () => {
                   <SelectValue placeholder="Select institution (optional)" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">No specific institution</SelectItem>
+                  <SelectItem value="none">No specific institution</SelectItem>
                   {institutions?.map((institution) => (
                     <SelectItem key={institution.id} value={institution.id}>
                       {institution.name}
